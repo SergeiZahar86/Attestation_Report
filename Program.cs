@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Attestation_Report
 {
@@ -30,6 +31,8 @@ namespace Attestation_Report
 
             using (SqlConnection connection = new SqlConnection(connectionString)) // делаем подключение
             {
+                Console.WriteLine("******************** сведения о подключении *******************************");
+                Console.WriteLine();
                 connection.Open();
                 Console.WriteLine("Подключение открыто");
                 Console.WriteLine("Свойства подключения:");
@@ -39,8 +42,8 @@ namespace Attestation_Report
                 Console.WriteLine("\tВерсия сервера: {0}", connection.ServerVersion);
                 Console.WriteLine("\tСостояние: {0}", connection.State);
                 Console.WriteLine("\tWorkstationld: {0}", connection.WorkstationId);
-                Console.WriteLine("------------------------------------------------------------------");
-
+                Console.WriteLine("***********************************************************************");
+                Console.WriteLine();
 
                 SqlCommand command1 = new SqlCommand(sqlExpressionPart, connection); // делаем команду
                 using (SqlDataReader reader = command1.ExecuteReader()) // класс для чтения строк из патока 
@@ -70,13 +73,16 @@ namespace Attestation_Report
 
                             Console.WriteLine("{0} \t{1} \t{2} \t{3} \t{4} \t{5}", part_id, oper, num_izm, start_time, end_time, num_metering);
                             Console.WriteLine();
-                            Console.WriteLine("*****************************************************************");
+                            Console.WriteLine();
+                            Console.WriteLine("************** сведения о партии ***************************************************");
                             Console.WriteLine($"{part.Part_id}, {part.Oper}, {part.Num_izm.ToString()}," +
                                 $" {part.Start_time.ToString()}, {part.End_time.ToString()}, {part.Num_izm.ToString()} ");
                         }
                     }
                 }
-                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine("******************** сведения о вагонах *************************************************");
                 SqlCommand command2 = new SqlCommand(sqlExpressionCar, connection); // делаем команду
                 using (SqlDataReader reader = command2.ExecuteReader()) // класс для чтения строк из патока 
                 {
@@ -91,7 +97,7 @@ namespace Attestation_Report
 
                         while (reader.Read()) // построчно считываем данные
                         {
-                            object part_id = reader.GetValue(0);
+                            /*object part_id = reader.GetValue(0);
                             object car_id = reader.GetValue(1);
                             object num = reader.GetValue(2);
                             object att_code = reader.GetValue(3);
@@ -117,20 +123,84 @@ namespace Attestation_Report
 
                             Console.WriteLine();
                             Console.WriteLine("***********************************************************");
-                            Console.WriteLine();
+                            Console.WriteLine();*/
 
+                            Class_Car class_Car = new Class_Car();
 
+                            class_Car.Part_id = reader.GetGuid(0);
+                            class_Car.Car_id = reader[1] as int?;
+                            class_Car.Num = reader.GetString(2);
+                            class_Car.Att_code = reader[3] as int?;
+                            class_Car.Tara = reader[4] as float?;
+                            class_Car.Tara_e = reader[5] as float?;
+                            class_Car.Zone_e = reader[6] as int?;
+                            class_Car.Cause_id = reader[7] as int?;
+                            class_Car.Carring_e = reader[8] as float?;
+                            //class_Car.Att_time = reader.GetDateTime(9);
+                            class_Car.Att_time = reader[9] as DateTime? ;
+                            class_Car.Shipper = reader[10] as int?;
+                            class_Car.Consigner = reader[11] as int?;
+                            class_Car.Mat = reader[12] as int?;
+                            class_Car.Left_truck = reader[13] as float?;
+                            class_Car.Right_truck = reader[14] as float?;
+                            class_Car.Brutto = reader[15] as float?;
+                            class_Car.Netto = reader[16] as float?;
+                            class_Car.Weighing_time = reader[17] as DateTime?;
+
+                            Program.cars.Add(class_Car);
+
+                            Console.WriteLine("{0} \t{1} \t{2} \t{3} \t{4} \t{5} \t{6} \t{7} \t{8} \t{9}" +
+                                " \t{10} \t{11} \t{12} \t{13} \t{14} \t{15} \t{16} \t{17}", class_Car.Part_id, class_Car.Car_id,
+                                class_Car.Num, class_Car.Att_code, class_Car.Tara,
+                                class_Car.Tara_e, class_Car.Zone_e, class_Car.Cause_id, class_Car.Carring_e,
+                                class_Car.Att_time, class_Car.Shipper, class_Car.Consigner, class_Car.Mat,
+                                class_Car.Left_truck, class_Car.Right_truck,
+                                class_Car.Brutto, class_Car.Netto, class_Car.Weighing_time);
                         }
                     }
                 }
             }
             Console.WriteLine("Подключение закрыто...");
             Console.WriteLine();
-            Console.Read();
+            //Console.Read();
 
-            XmlDocument xDoc = new XmlDocument();
+            XDocument xdoc = new XDocument();             // корневой элемент
 
+            XElement partX = new XElement("part");        
+            XElement partId = new XElement("partId", part.Part_id.ToString());
+            XElement operX = new XElement("oper", part.Oper);
+            XElement numIzm = new XElement("num_inm", part.Num_izm.ToString());
+            XElement startTime = new XElement("start_time", part.Start_time.ToString());
+            XElement endTime = new XElement("end_time", part.End_time.ToString());
+            XElement numMetering = new XElement("num_metering", part.Num_metering.ToString());
+            XElement cars = new XElement("cars");
 
+            foreach(Class_Car car in Program.cars)
+            {
+                XElement partIdCar = new XElement("partId", car.Part_id.ToString());
+                XElement carId = new XElement("car_id", car.Car_id.ToString());
+                XElement num = new XElement("num", car.Num);
+                XElement attCode = new XElement("att_code", car.Att_code.ToString());
+                XElement tara = new XElement("tara", car.Tara.ToString());
+                XElement taraE = new XElement("tara_e", car.Tara_e.ToString());
+                XElement zoneE = new XElement("zone_e", car.Zone_e.ToString());
+                XElement causeId = new XElement("cause_id", car.Cause_id.ToString());
+                XElement carringE = new XElement("carring_e", car.Carring_e.ToString());
+                XElement attTime = new XElement("att_time", car.Att_time.ToString());
+                XElement shipper = new XElement("shipper", car.Shipper.ToString());
+
+                /*SELECT car.part_id,car.car_id,num,car.tara,car.tara_e,
+car.right_truck,car.brutto,car.netto,car.weighing_time, 
+car.carrying_e,car.att_time,car.left_truck
+,cont.name as shipper,cons.name as consigner,mat.name as mat
+FROM tb_car as car
+left join sp_contractor as cont on car.shipper = cont.contractor_id
+left join sp_contractor as cons on car.consigner = cons.contractor_id
+left join sp_mat as mat on car.mat = mat.mat_id
+where car.part_id LIKE 'A78A%'
+and car.att_code in (1, 2)*/
+
+            }
 
 
 
